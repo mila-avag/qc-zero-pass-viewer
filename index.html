@@ -466,7 +466,7 @@
         throw new Error(`Missing required column(s): ${missing.join(", ")}`);
       }
 
-      state.rows = rows
+      state.rows = dedupeRows(rows
         .filter((row) => row.taskid && row.title)
         .map((row) => ({
           taskid: row.taskid.trim(),
@@ -476,7 +476,7 @@
           title: (row.title || "").trim(),
           total_runs: Number(row.total_runs || 0),
           pass_count: Number(row.pass_count || 0),
-        }));
+        })));
 
       state.taskMap = groupByTask(state.rows);
       state.selectedTask = "";
@@ -487,6 +487,18 @@
       resultSubtitle.textContent = `${state.rows.length} zero-pass rows loaded from ${sourceLabel}.`;
       results.className = "empty";
       results.textContent = "Search for a task ID or attempt ID, or choose one from the task list.";
+    }
+
+    function dedupeRows(rows) {
+      const seen = new Set();
+      return rows.filter((row) => {
+        const key = [row.taskid, row.check_type, row.title]
+          .map((value) => value.toLowerCase())
+          .join("\u0000");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
     }
 
     function parseCsv(text) {
