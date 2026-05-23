@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QC Zero Pass Viewer</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --border: #334155;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --good: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.14), transparent 32rem), var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.88);
+      padding: 20px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+
+    .main {
+      padding: 28px;
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    h2 { font-size: 18px; margin-bottom: 12px; }
+    h3 { font-size: 14px; margin-bottom: 8px; }
+
+    .muted { color: var(--muted); }
+
+    .card {
+      background: rgba(17, 24, 39, 0.86);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 18px 55px rgba(0, 0, 0, 0.16);
+    }
+
+    .dropzone {
+      border: 1px dashed #64748b;
+      border-radius: 12px;
+      padding: 16px;
+      background: rgba(31, 41, 55, 0.5);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    input[type="file"] { display: none; }
+
+    input[type="search"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 12px;
+      background: #020617;
+      color: var(--text);
+      outline: none;
+      font-size: 14px;
+    }
+
+    input[type="search"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .task-button {
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      padding: 9px 10px;
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .task-button:hover {
+      background: rgba(148, 163, 184, 0.08);
+      color: var(--text);
+    }
+
+    .task-button.active {
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.5);
+      color: var(--accent);
+    }
+
+    .task-count {
+      float: right;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      background: rgba(17, 24, 39, 0.86);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .pill, button.action {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(31, 41, 55, 0.8);
+      color: var(--text);
+      padding: 7px 12px;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .pill.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    button.action:hover {
+      border-color: var(--accent);
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: start;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: rgba(15, 23, 42, 0.66);
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge.rubric { background: rgba(129, 140, 248, 0.16); color: #c4b5fd; }
+    .badge.test { background: rgba(34, 197, 94, 0.14); color: #86efac; }
+
+    .title {
+      font-weight: 650;
+      color: #f8fafc;
+      overflow-wrap: anywhere;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .zero {
+      color: #fecaca;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.24);
+      border-radius: 10px;
+      padding: 7px 9px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .empty {
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      text-align: center;
+      background: rgba(17, 24, 39, 0.5);
+    }
+
+    .error {
+      color: #fecaca;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .row { grid-template-columns: 1fr; }
+      .zero { width: fit-content; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h1>QC Zero Pass Viewer</h1>
+      <p class="muted">Loads the edited Google Sheet, then lets QC search a task ID to see rubrics and tests with 0 passes across all 16 runs.</p>
+
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept=".csv,text/csv">
+        <strong>Fallback CSV Upload</strong>
+        <div class="muted">Drop a sheet export here if Google Sheet loading is blocked.</div>
+      </label>
+      <div class="error" id="error"></div>
+
+      <div class="card" style="margin-top: 16px;">
+        <h3>Google Sheet</h3>
+        <input id="sheetUrlInput" type="search" aria-label="Google Sheet URL">
+        <div class="toolbar" style="margin-top: 10px; margin-bottom: 0;">
+          <button class="action" id="loadSheetButton" type="button">Refresh Sheet</button>
+        </div>
+        <p class="muted" style="margin-top: 10px; margin-bottom: 0;">The sheet must be shared as anyone-with-link or published so the browser can fetch it.</p>
+      </div>
+
+      <div class="card" style="margin-top: 16px;">
+        <h3>Search Task or Attempt ID</h3>
+        <input id="searchInput" type="search" placeholder="Paste or type taskid or attempt id..." autocomplete="off">
+      </div>
+
+      <div class="card">
+        <h3>Tasks</h3>
+        <div class="muted" id="taskListMeta">No CSV loaded yet.</div>
+        <div class="task-list" id="taskList"></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Tasks</div>
+          <div class="stat-value" id="tasksStat">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Zero Rubrics</div>
+          <div class="stat-value" id="rubricsStat">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Zero Tests</div>
+          <div class="stat-value" id="testsStat">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Total Rows</div>
+          <div class="stat-value" id="rowsStat">0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 id="resultTitle">Loading Google Sheet...</h2>
+        <p class="muted" id="resultSubtitle">Expected columns: taskid, attempt, last_attempt_date, check_type, title, total_runs, pass_count.</p>
+        <div class="toolbar">
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill" data-filter="rubric">Rubrics</button>
+          <button class="pill" data-filter="test">Tests</button>
+          <button class="action" id="copyButton" type="button">Copy Current Results</button>
+          <button class="action" id="exportButton" type="button">Export Current CSV</button>
+        </div>
+      </div>
+
+      <div id="results" class="empty">
+        Loading the edited Google Sheet. If loading is blocked, use the fallback CSV upload.
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/12p1ADgr4TS7Ji4vRbuouuaAYPkEtplouLhuaUB1epis/edit?gid=0#gid=0";
+
+    const state = {
+      rows: [],
+      taskMap: new Map(),
+      selectedTask: "",
+      filter: "all",
+    };
+
+    const fileInput = document.getElementById("fileInput");
+    const dropzone = document.getElementById("dropzone");
+    const errorBox = document.getElementById("error");
+    const sheetUrlInput = document.getElementById("sheetUrlInput");
+    const searchInput = document.getElementById("searchInput");
+    const taskList = document.getElementById("taskList");
+    const taskListMeta = document.getElementById("taskListMeta");
+    const results = document.getElementById("results");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultSubtitle = document.getElementById("resultSubtitle");
+
+    sheetUrlInput.value = DEFAULT_SHEET_URL;
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (file) loadFile(file);
+    });
+
+    document.getElementById("loadSheetButton").addEventListener("click", () => {
+      loadGoogleSheet(sheetUrlInput.value.trim());
+    });
+
+    dropzone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+
+    dropzone.addEventListener("dragleave", () => {
+      dropzone.classList.remove("dragover");
+    });
+
+    dropzone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      dropzone.classList.remove("dragover");
+      const file = event.dataTransfer.files && event.dataTransfer.files[0];
+      if (file) loadFile(file);
+    });
+
+    searchInput.addEventListener("input", () => {
+      const query = searchInput.value.trim();
+      renderTaskList(query);
+
+      const match = findTaskForSearch(query);
+      if (match) {
+        selectTask(match, query);
+        return;
+      }
+    });
+
+    document.querySelectorAll(".pill").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".pill").forEach((b) => b.classList.remove("active"));
+        button.classList.add("active");
+        state.filter = button.dataset.filter;
+        renderResults();
+      });
+    });
+
+    document.getElementById("copyButton").addEventListener("click", async () => {
+      const text = currentRows().map(formatRowForCopy).join("\n");
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+    });
+
+    document.getElementById("exportButton").addEventListener("click", () => {
+      const rows = currentRows();
+      if (!rows.length) return;
+      const csv = toCsv(rows);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${state.selectedTask || "zero_pass_results"}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    loadGoogleSheet(DEFAULT_SHEET_URL);
+
+    async function loadGoogleSheet(sheetUrl) {
+      try {
+        errorBox.style.display = "none";
+        resultTitle.textContent = "Loading Google Sheet...";
+        resultSubtitle.textContent = "Fetching the latest zero-pass rows.";
+        results.className = "empty";
+        results.textContent = "Loading the edited Google Sheet...";
+
+        const rows = await loadGoogleSheetRows(sheetUrl);
+        useRows(rows, "Google Sheet");
+      } catch (error) {
+        showError(`${error.message} The fallback CSV upload still works.`);
+        resultTitle.textContent = "Could not load Google Sheet";
+        resultSubtitle.textContent = "Use the fallback CSV upload, or make the sheet accessible to anyone with the link.";
+        results.className = "empty";
+        results.textContent = "Google Sheet loading is blocked by sharing/auth settings.";
+      }
+    }
+
+    async function loadGoogleSheetRows(sheetUrl) {
+      try {
+        const csvUrl = toGoogleCsvUrl(sheetUrl);
+        const response = await fetch(csvUrl, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Google Sheet returned ${response.status}.`);
+        }
+
+        const text = await response.text();
+        if (/Google Sheets: Sign-in|<html/i.test(text.slice(0, 500))) {
+          throw new Error("Google Sheet requires sign-in. Share it as anyone-with-link/published, or use the CSV upload fallback.");
+        }
+
+        return parseCsv(text);
+      } catch (error) {
+        if (error instanceof TypeError) {
+          return loadGoogleSheetRowsJsonp(sheetUrl);
+        }
+        throw error;
+      }
+    }
+
+    function loadGoogleSheetRowsJsonp(sheetUrl) {
+      return new Promise((resolve, reject) => {
+        const { sheetId, gid } = getGoogleSheetParts(sheetUrl);
+        const callbackName = `handleGoogleSheet_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        const script = document.createElement("script");
+        const timeout = window.setTimeout(() => {
+          cleanup();
+          reject(new Error("Google Sheet request timed out."));
+        }, 15000);
+
+        window[callbackName] = (response) => {
+          cleanup();
+          if (response.status !== "ok") {
+            reject(new Error(response.errors?.[0]?.detailed_message || "Google Sheet returned an error."));
+            return;
+          }
+          resolve(rowsFromGoogleVisualization(response.table));
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error("Could not load Google Sheet."));
+        };
+        script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?gid=${gid}&tqx=out:json;responseHandler:${callbackName}`;
+        document.body.appendChild(script);
+
+        function cleanup() {
+          window.clearTimeout(timeout);
+          delete window[callbackName];
+          script.remove();
+        }
+      });
+    }
+
+    function rowsFromGoogleVisualization(table) {
+      const headers = table.cols.map((column) => String(column.label || "").trim());
+      return table.rows.map((row) => {
+        const out = {};
+        headers.forEach((header, index) => {
+          const cell = row.c[index];
+          out[header] = cell ? String(cell.f ?? cell.v ?? "") : "";
+        });
+        return out;
+      });
+    }
+
+    function toGoogleCsvUrl(sheetUrl) {
+      const { sheetId, gid } = getGoogleSheetParts(sheetUrl);
+      return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+    }
+
+    function getGoogleSheetParts(sheetUrl) {
+      const idMatch = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+      const gidMatch = sheetUrl.match(/[?#&]gid=([0-9]+)/);
+      if (!idMatch) throw new Error("Enter a valid Google Sheets URL.");
+      return {
+        sheetId: idMatch[1],
+        gid: gidMatch ? gidMatch[1] : "0",
+      };
+    }
+
+    function loadFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          errorBox.style.display = "none";
+          const rows = parseCsv(String(reader.result || ""));
+          useRows(rows, file.name);
+        } catch (error) {
+          showError(error.message);
+        }
+      };
+      reader.onerror = () => showError("Could not read the selected file.");
+      reader.readAsText(file);
+    }
+
+    function useRows(rows, sourceLabel) {
+      const required = ["taskid", "check_type", "title", "total_runs", "pass_count"];
+      const missing = required.filter((key) => !rows.length || !(key in rows[0]));
+      if (missing.length) {
+        throw new Error(`Missing required column(s): ${missing.join(", ")}`);
+      }
+
+      state.rows = rows
+        .filter((row) => row.taskid && row.title)
+        .map((row) => ({
+          taskid: row.taskid.trim(),
+          attempt: (row.attempt || "").trim(),
+          last_attempt_date: cleanDate(row.last_attempt_date || ""),
+          check_type: (row.check_type || "").trim().toLowerCase(),
+          title: (row.title || "").trim(),
+          total_runs: Number(row.total_runs || 0),
+          pass_count: Number(row.pass_count || 0),
+        }));
+
+      state.taskMap = groupByTask(state.rows);
+      state.selectedTask = "";
+      searchInput.value = "";
+      renderStats();
+      renderTaskList("");
+      resultTitle.textContent = "Search or choose a task";
+      resultSubtitle.textContent = `${state.rows.length} zero-pass rows loaded from ${sourceLabel}.`;
+      results.className = "empty";
+      results.textContent = "Search for a task ID or attempt ID, or choose one from the task list.";
+    }
+
+    function parseCsv(text) {
+      const cleanText = text.replace(/^\uFEFF/, "");
+      const rows = [];
+      let row = [];
+      let field = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < cleanText.length; i++) {
+        const char = cleanText[i];
+        const next = cleanText[i + 1];
+
+        if (char === '"' && inQuotes && next === '"') {
+          field += '"';
+          i++;
+        } else if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === "," && !inQuotes) {
+          row.push(field);
+          field = "";
+        } else if ((char === "\n" || char === "\r") && !inQuotes) {
+          if (char === "\r" && next === "\n") i++;
+          row.push(field);
+          if (row.some((value) => value !== "")) rows.push(row);
+          row = [];
+          field = "";
+        } else {
+          field += char;
+        }
+      }
+
+      if (field || row.length) {
+        row.push(field);
+        rows.push(row);
+      }
+
+      const headers = rows.shift().map((header) => header.trim());
+      return rows.map((values) => {
+        const out = {};
+        headers.forEach((header, index) => {
+          out[header] = values[index] || "";
+        });
+        return out;
+      });
+    }
+
+    function groupByTask(rows) {
+      const map = new Map();
+      rows.forEach((row) => {
+        if (!map.has(row.taskid)) map.set(row.taskid, []);
+        map.get(row.taskid).push(row);
+      });
+      return new Map(Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0])));
+    }
+
+    function renderStats() {
+      const rubrics = state.rows.filter((row) => row.check_type === "rubric").length;
+      const tests = state.rows.filter((row) => row.check_type === "test").length;
+      document.getElementById("tasksStat").textContent = state.taskMap.size;
+      document.getElementById("rubricsStat").textContent = rubrics;
+      document.getElementById("testsStat").textContent = tests;
+      document.getElementById("rowsStat").textContent = state.rows.length;
+    }
+
+    function renderTaskList(query) {
+      taskList.innerHTML = "";
+      if (!state.taskMap.size) {
+        taskListMeta.textContent = "No CSV loaded yet.";
+        return;
+      }
+
+      const normalized = query.toLowerCase();
+      const tasks = Array.from(state.taskMap.entries())
+        .filter(([taskid, rows]) => matchesTaskSearch(taskid, rows, normalized))
+        .slice(0, 100);
+
+      taskListMeta.textContent = `${tasks.length} shown of ${state.taskMap.size} tasks`;
+      tasks.forEach(([taskid, rows]) => {
+        const button = document.createElement("button");
+        button.className = `task-button${taskid === state.selectedTask ? " active" : ""}`;
+        button.innerHTML = `${escapeHtml(taskid)} <span class="task-count">${rows.length}</span>`;
+        button.addEventListener("click", () => selectTask(taskid));
+        taskList.appendChild(button);
+      });
+    }
+
+    function matchesTaskSearch(taskid, rows, normalizedQuery) {
+      if (!normalizedQuery) return true;
+      return taskid.toLowerCase().includes(normalizedQuery)
+        || rows.some((row) => row.attempt.toLowerCase().includes(normalizedQuery));
+    }
+
+    function findTaskForSearch(query) {
+      const normalized = query.toLowerCase();
+      if (!normalized) return "";
+
+      const exactTask = Array.from(state.taskMap.keys()).find((taskid) => taskid.toLowerCase() === normalized);
+      if (exactTask) return exactTask;
+
+      const exactAttempt = Array.from(state.taskMap.entries()).find(([, rows]) =>
+        rows.some((row) => row.attempt.toLowerCase() === normalized)
+      );
+      return exactAttempt ? exactAttempt[0] : "";
+    }
+
+    function selectTask(taskid, searchValue = taskid) {
+      state.selectedTask = taskid;
+      searchInput.value = searchValue;
+      renderTaskList(searchValue);
+      renderResults();
+    }
+
+    function currentRows() {
+      const rows = state.taskMap.get(state.selectedTask) || [];
+      if (state.filter === "all") return rows;
+      return rows.filter((row) => row.check_type === state.filter);
+    }
+
+    function renderResults() {
+      const allRows = state.taskMap.get(state.selectedTask) || [];
+      const rows = currentRows();
+      const rubrics = allRows.filter((row) => row.check_type === "rubric").length;
+      const tests = allRows.filter((row) => row.check_type === "test").length;
+
+      if (!state.selectedTask) {
+        resultTitle.textContent = "Search or choose a task";
+        resultSubtitle.textContent = state.rows.length ? `${state.rows.length} zero-pass rows loaded.` : "Expected columns: taskid, attempt, last_attempt_date, check_type, title, total_runs, pass_count.";
+        results.className = "empty";
+        results.textContent = state.rows.length ? "Search for a task ID or attempt ID, or choose one from the task list." : "Upload the edited sheet CSV, then search for a task ID or attempt ID.";
+        return;
+      }
+
+      resultTitle.textContent = state.selectedTask;
+      resultSubtitle.textContent = `${rubrics} zero-pass rubric(s), ${tests} zero-pass test(s). Showing ${rows.length} ${state.filter === "all" ? "item(s)" : `${state.filter}(s)`}.`;
+
+      if (!rows.length) {
+        results.className = "empty";
+        results.textContent = `No ${state.filter} rows for this task.`;
+        return;
+      }
+
+      results.className = "";
+      results.innerHTML = rows.map(renderRow).join("");
+    }
+
+    function renderRow(row) {
+      const badgeClass = row.check_type === "rubric" ? "rubric" : "test";
+      const meta = [
+        row.attempt ? `attempt: ${escapeHtml(row.attempt)}` : "",
+        row.last_attempt_date ? `last attempt: ${escapeHtml(row.last_attempt_date)}` : "",
+      ].filter(Boolean).join(" | ");
+
+      return `
+        <div class="row">
+          <div class="badge ${badgeClass}">${escapeHtml(row.check_type)}</div>
+          <div>
+            <div class="title">${escapeHtml(row.title)}</div>
+            <div class="meta">${meta || "No attempt metadata"}</div>
+          </div>
+          <div class="zero">${row.pass_count}/${row.total_runs} passed</div>
+        </div>
+      `;
+    }
+
+    function formatRowForCopy(row) {
+      return `[${row.check_type}] ${row.title} (${row.pass_count}/${row.total_runs} passed)`;
+    }
+
+    function toCsv(rows) {
+      const headers = ["taskid", "attempt", "last_attempt_date", "check_type", "title", "total_runs", "pass_count"];
+      const lines = [headers.join(",")];
+      rows.forEach((row) => {
+        lines.push(headers.map((header) => csvEscape(row[header])).join(","));
+      });
+      return lines.join("\n");
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      if (/[",\n\r]/.test(text)) return `"${text.replaceAll('"', '""')}"`;
+      return text;
+    }
+
+    function cleanDate(value) {
+      return String(value).trim().replace(/^"+|"+$/g, "");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.style.display = "block";
+    }
+  </script>
+</body>
+</html>
