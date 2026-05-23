@@ -68,22 +68,6 @@
       box-shadow: 0 18px 55px rgba(0, 0, 0, 0.16);
     }
 
-    .dropzone {
-      border: 1px dashed #64748b;
-      border-radius: 12px;
-      padding: 16px;
-      background: rgba(31, 41, 55, 0.5);
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-    }
-
-    .dropzone:hover, .dropzone.dragover {
-      border-color: var(--accent);
-      background: rgba(56, 189, 248, 0.08);
-    }
-
-    input[type="file"] { display: none; }
-
     input[type="search"] {
       width: 100%;
       border: 1px solid var(--border);
@@ -272,23 +256,8 @@
   <div class="app">
     <aside class="sidebar">
       <h1>QC Zero Pass Viewer</h1>
-      <p class="muted">Loads the edited Google Sheet, then lets QC search a task ID to see rubrics and tests with 0 passes across all 16 runs.</p>
-
-      <label class="dropzone" id="dropzone">
-        <input type="file" id="fileInput" accept=".csv,text/csv">
-        <strong>Fallback CSV Upload</strong>
-        <div class="muted">Drop a sheet export here if Google Sheet loading is blocked.</div>
-      </label>
+      <p class="muted">Loads the latest QC data, then lets QC search a task or attempt ID to see rubrics and tests with 0 passes across all 16 runs.</p>
       <div class="error" id="error"></div>
-
-      <div class="card" style="margin-top: 16px;">
-        <h3>Google Sheet</h3>
-        <input id="sheetUrlInput" type="search" aria-label="Google Sheet URL">
-        <div class="toolbar" style="margin-top: 10px; margin-bottom: 0;">
-          <button class="action" id="loadSheetButton" type="button">Refresh Sheet</button>
-        </div>
-        <p class="muted" style="margin-top: 10px; margin-bottom: 0;">The sheet must be shared as anyone-with-link or published so the browser can fetch it.</p>
-      </div>
 
       <div class="card" style="margin-top: 16px;">
         <h3>Search Task or Attempt ID</h3>
@@ -323,7 +292,7 @@
       </div>
 
       <div class="card">
-        <h2 id="resultTitle">Loading Google Sheet...</h2>
+        <h2 id="resultTitle">Loading data...</h2>
         <p class="muted" id="resultSubtitle">Expected columns: taskid, attempt, last_attempt_date, check_type, title, total_runs, pass_count.</p>
         <div class="toolbar">
           <button class="pill active" data-filter="all">All</button>
@@ -335,13 +304,14 @@
       </div>
 
       <div id="results" class="empty">
-        Loading the edited Google Sheet. If loading is blocked, use the fallback CSV upload.
+        Loading the latest QC data.
       </div>
     </main>
   </div>
 
   <script>
-    const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/12p1ADgr4TS7Ji4vRbuouuaAYPkEtplouLhuaUB1epis/edit?gid=0#gid=0";
+    const SHEET_ID = "12p1ADgr4TS7Ji4vRbuouuaAYPkEtplouLhuaUB1epis";
+    const SHEET_GID = "0";
 
     const state = {
       rows: [],
@@ -350,43 +320,13 @@
       filter: "all",
     };
 
-    const fileInput = document.getElementById("fileInput");
-    const dropzone = document.getElementById("dropzone");
     const errorBox = document.getElementById("error");
-    const sheetUrlInput = document.getElementById("sheetUrlInput");
     const searchInput = document.getElementById("searchInput");
     const taskList = document.getElementById("taskList");
     const taskListMeta = document.getElementById("taskListMeta");
     const results = document.getElementById("results");
     const resultTitle = document.getElementById("resultTitle");
     const resultSubtitle = document.getElementById("resultSubtitle");
-
-    sheetUrlInput.value = DEFAULT_SHEET_URL;
-
-    fileInput.addEventListener("change", () => {
-      const file = fileInput.files && fileInput.files[0];
-      if (file) loadFile(file);
-    });
-
-    document.getElementById("loadSheetButton").addEventListener("click", () => {
-      loadGoogleSheet(sheetUrlInput.value.trim());
-    });
-
-    dropzone.addEventListener("dragover", (event) => {
-      event.preventDefault();
-      dropzone.classList.add("dragover");
-    });
-
-    dropzone.addEventListener("dragleave", () => {
-      dropzone.classList.remove("dragover");
-    });
-
-    dropzone.addEventListener("drop", (event) => {
-      event.preventDefault();
-      dropzone.classList.remove("dragover");
-      const file = event.dataTransfer.files && event.dataTransfer.files[0];
-      if (file) loadFile(file);
-    });
 
     searchInput.addEventListener("input", () => {
       const query = searchInput.value.trim();
@@ -427,63 +367,62 @@
       URL.revokeObjectURL(url);
     });
 
-    loadGoogleSheet(DEFAULT_SHEET_URL);
+    loadGoogleSheet();
 
-    async function loadGoogleSheet(sheetUrl) {
+    async function loadGoogleSheet() {
       try {
         errorBox.style.display = "none";
-        resultTitle.textContent = "Loading Google Sheet...";
+        resultTitle.textContent = "Loading data...";
         resultSubtitle.textContent = "Fetching the latest zero-pass rows.";
         results.className = "empty";
-        results.textContent = "Loading the edited Google Sheet...";
+        results.textContent = "Loading the latest QC data.";
 
-        const rows = await loadGoogleSheetRows(sheetUrl);
-        useRows(rows, "Google Sheet");
+        const rows = await loadGoogleSheetRows();
+        useRows(rows, "latest data");
       } catch (error) {
-        showError(`${error.message} The fallback CSV upload still works.`);
-        resultTitle.textContent = "Could not load Google Sheet";
-        resultSubtitle.textContent = "Use the fallback CSV upload, or make the sheet accessible to anyone with the link.";
+        showError(error.message);
+        resultTitle.textContent = "Could not load data";
+        resultSubtitle.textContent = "Make sure the source data is accessible and try refreshing the page.";
         results.className = "empty";
-        results.textContent = "Google Sheet loading is blocked by sharing/auth settings.";
+        results.textContent = "Data loading is blocked by sharing/auth settings.";
       }
     }
 
-    async function loadGoogleSheetRows(sheetUrl) {
+    async function loadGoogleSheetRows() {
       try {
-        const csvUrl = toGoogleCsvUrl(sheetUrl);
+        const csvUrl = toGoogleCsvUrl();
         const response = await fetch(csvUrl, { cache: "no-store" });
         if (!response.ok) {
-          throw new Error(`Google Sheet returned ${response.status}.`);
+          throw new Error(`Data source returned ${response.status}.`);
         }
 
         const text = await response.text();
         if (/Google Sheets: Sign-in|<html/i.test(text.slice(0, 500))) {
-          throw new Error("Google Sheet requires sign-in. Share it as anyone-with-link/published, or use the CSV upload fallback.");
+          throw new Error("Data source requires sign-in. Share it as anyone-with-link or publish it.");
         }
 
         return parseCsv(text);
       } catch (error) {
         if (error instanceof TypeError) {
-          return loadGoogleSheetRowsJsonp(sheetUrl);
+          return loadGoogleSheetRowsJsonp();
         }
         throw error;
       }
     }
 
-    function loadGoogleSheetRowsJsonp(sheetUrl) {
+    function loadGoogleSheetRowsJsonp() {
       return new Promise((resolve, reject) => {
-        const { sheetId, gid } = getGoogleSheetParts(sheetUrl);
         const callbackName = `handleGoogleSheet_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         const script = document.createElement("script");
         const timeout = window.setTimeout(() => {
           cleanup();
-          reject(new Error("Google Sheet request timed out."));
+          reject(new Error("Data source request timed out."));
         }, 15000);
 
         window[callbackName] = (response) => {
           cleanup();
           if (response.status !== "ok") {
-            reject(new Error(response.errors?.[0]?.detailed_message || "Google Sheet returned an error."));
+            reject(new Error(response.errors?.[0]?.detailed_message || "Data source returned an error."));
             return;
           }
           resolve(rowsFromGoogleVisualization(response.table));
@@ -491,9 +430,9 @@
 
         script.onerror = () => {
           cleanup();
-          reject(new Error("Could not load Google Sheet."));
+          reject(new Error("Could not load data."));
         };
-        script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?gid=${gid}&tqx=out:json;responseHandler:${callbackName}`;
+        script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${SHEET_GID}&tqx=out:json;responseHandler:${callbackName}`;
         document.body.appendChild(script);
 
         function cleanup() {
@@ -516,34 +455,8 @@
       });
     }
 
-    function toGoogleCsvUrl(sheetUrl) {
-      const { sheetId, gid } = getGoogleSheetParts(sheetUrl);
-      return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
-    }
-
-    function getGoogleSheetParts(sheetUrl) {
-      const idMatch = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-      const gidMatch = sheetUrl.match(/[?#&]gid=([0-9]+)/);
-      if (!idMatch) throw new Error("Enter a valid Google Sheets URL.");
-      return {
-        sheetId: idMatch[1],
-        gid: gidMatch ? gidMatch[1] : "0",
-      };
-    }
-
-    function loadFile(file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          errorBox.style.display = "none";
-          const rows = parseCsv(String(reader.result || ""));
-          useRows(rows, file.name);
-        } catch (error) {
-          showError(error.message);
-        }
-      };
-      reader.onerror = () => showError("Could not read the selected file.");
-      reader.readAsText(file);
+    function toGoogleCsvUrl() {
+      return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
     }
 
     function useRows(rows, sourceLabel) {
