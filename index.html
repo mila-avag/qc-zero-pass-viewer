@@ -313,6 +313,14 @@
     const SHEET_ID = "12p1ADgr4TS7Ji4vRbuouuaAYPkEtplouLhuaUB1epis";
     const SHEET_GID = "0";
 
+    const HIDDEN_TASK_IDS = new Set([
+      "6a1e26303b78c2f101339e7a",
+    ].map((id) => id.toLowerCase()));
+
+    function isHiddenTask(taskid) {
+      return HIDDEN_TASK_IDS.has(String(taskid || "").trim().toLowerCase());
+    }
+
     const state = {
       rows: [],
       taskMap: new Map(),
@@ -468,6 +476,7 @@
 
       state.rows = dedupeRows(rows
         .filter((row) => row.taskid && row.title)
+        .filter((row) => !isHiddenTask(row.taskid))
         .map((row) => ({
           taskid: row.taskid.trim(),
           attempt: (row.attempt || "").trim(),
