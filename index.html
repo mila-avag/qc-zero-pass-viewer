@@ -313,7 +313,7 @@
     const SHEET_ID = "12p1ADgr4TS7Ji4vRbuouuaAYPkEtplouLhuaUB1epis";
     const SHEET_GID = "0";
 
-    const HIDDEN_TASK_IDS = new Set([
+    const HIDDEN_TASK_ID_LIST = [
       "6a1e26303b78c2f101339e7a",
       "6a22f621fdf1ffad0f94194d",
       "6a2ef82e16410841a44930ff",
@@ -411,10 +411,127 @@
       "6a2ef82e16410841a44930fb",
       "6a344682c2e07046cdd1afe4",
       "6a2ef82e16410841a44931aa",
-    ].map((id) => id.toLowerCase()));
+    ];
+
+    const NO_ZERO_PASS_TASK_ID_LIST = [
+      "6a2ef82e16410841a44930ff",
+      "6a1e26303b78c2f101339e7a",
+      "6a2a3baea5919569ede45f29",
+      "6a2b162e0c2601fcca89a083",
+      "6a2b162e0c2601fcca89a06d",
+      "6a2ef82e16410841a4493169",
+      "6a2c83c0ee2598dd305a80ca",
+      "6a2ef82e16410841a449311e",
+      "6a2839aa73bdd941556bf6a6",
+      "6a2ef82e16410841a449319c",
+      "6a3153eef59fcf1d0be0b4e4",
+      "6a3153eef59fcf1d0be0b526",
+      "6a212c38a8d19df67328199f",
+      "6a2c83c0ee2598dd305a8173",
+      "6a2ef82e16410841a4493116",
+      "6a2ef82e16410841a4493156",
+      "6a2c83c0ee2598dd305a8166",
+      "6a329e79f3703c15d342d2c2",
+      "6a3153eef59fcf1d0be0b4bb",
+      "6a2ef82e16410841a449317b",
+      "6a2ef82e16410841a44931e6",
+      "6a2ef82e16410841a4493145",
+      "6a2ef82e16410841a44931e1",
+      "6a2ef82e16410841a4493129",
+      "6a2ef82e16410841a4493141",
+      "6a3153eef59fcf1d0be0b4c7",
+      "6a329e79f3703c15d342d271",
+      "6a2e4c53cae99f56e3e572ff",
+      "6a2e4c53cae99f56e3e5731b",
+      "6a2ef82e16410841a4493166",
+      "6a2ef82e16410841a44930d9",
+      "6a329e79f3703c15d342d2c7",
+      "6a2839aa73bdd941556bf666",
+      "6a3153eef59fcf1d0be0b4f5",
+      "6a329e79f3703c15d342d2bf",
+      "6a2ef82e16410841a44931a0",
+      "6a2ef82e16410841a449319d",
+      "6a2ef82e16410841a44931b4",
+      "6a329e79f3703c15d342d26c",
+      "6a2e4c53cae99f56e3e572db",
+      "6a2e4c53cae99f56e3e57313",
+      "6a2e4c53cae99f56e3e572eb",
+      "6a2ef82e16410841a4493160",
+      "6a2ef82e16410841a449312e",
+      "6a2e4c53cae99f56e3e57339",
+      "6a2ef82e16410841a4493172",
+      "6a2b162e0c2601fcca89a075",
+      "6a2b162e0c2601fcca89a01a",
+      "6a2ef82e16410841a449318c",
+      "6a329e79f3703c15d342d24f",
+      "6a3153eef59fcf1d0be0b54e",
+      "6a2ef82e16410841a4493195",
+      "6a3153eef59fcf1d0be0b4b5",
+      "6a3153eef59fcf1d0be0b565",
+      "6a2ef82e16410841a4493134",
+      "6a2c83c0ee2598dd305a8135",
+      "6a3153eef59fcf1d0be0b4dc",
+      "6a3153eef59fcf1d0be0b513",
+      "6a2ef82e16410841a44931ce",
+      "6a329e79f3703c15d342d28f",
+      "6a2ef82e16410841a4493147",
+      "6a329e79f3703c15d342d2c5",
+      "6a2ef82e16410841a449313d",
+      "6a2ef82e16410841a4493135",
+      "6a2ef82e16410841a4493136",
+      "6a2e4c53cae99f56e3e572fc",
+      "6a2ef82e16410841a4493115",
+      "6a2e4c53cae99f56e3e57324",
+      "6a2ef82e16410841a4493140",
+      "6a2ef82e16410841a4493170",
+      "6a2c83c0ee2598dd305a80f5",
+      "6a2ef82e16410841a449316b",
+      "6a2ef82e16410841a4493144",
+      "6a2c83c0ee2598dd305a8161",
+      "6a2ef82e16410841a449319f",
+      "6a2ef82e16410841a44931cf",
+      "6a2ef82e16410841a44931c9",
+      "6a2ef82e16410841a44931cd",
+      "6a2ef82e16410841a449317d",
+      "6a3153eef59fcf1d0be0b4e5",
+      "6a3153eef59fcf1d0be0b53a",
+      "6a2ef82e16410841a44931a3",
+      "6a3153eef59fcf1d0be0b4f7",
+      "6a2ef82e16410841a44931a5",
+      "6a2ef82e16410841a44931af",
+      "6a2ef82e16410841a449315c",
+      "6a2ef82e16410841a449312f",
+      "6a2ef82e16410841a44930f4",
+      "6a2e4c53cae99f56e3e572cf",
+      "6a2e4c53cae99f56e3e572d3",
+      "6a2ef82e16410841a44931e9",
+      "6a344682c2e07046cdd1af71",
+      "6a2ef82e16410841a44931de",
+      "6a2ef82e16410841a44931b0",
+      "6a2e4c53cae99f56e3e57321",
+      "6a2ef82e16410841a4493107",
+      "6a3153eef59fcf1d0be0b516",
+      "6a2ef82e16410841a449311d",
+      "6a2ef82e16410841a449311c",
+      "6a2ef82e16410841a44930da",
+    ];
+
+    const NO_ZERO_PASS_TASK_IDS = new Set(
+      NO_ZERO_PASS_TASK_ID_LIST.map((id) => id.toLowerCase())
+    );
+
+    const HIDDEN_TASK_IDS = new Set(
+      HIDDEN_TASK_ID_LIST
+        .map((id) => id.toLowerCase())
+        .filter((id) => !NO_ZERO_PASS_TASK_IDS.has(id))
+    );
 
     function isHiddenTask(taskid) {
       return HIDDEN_TASK_IDS.has(String(taskid || "").trim().toLowerCase());
+    }
+
+    function hasNoZeroPassItems(taskid) {
+      return NO_ZERO_PASS_TASK_IDS.has(String(taskid || "").trim().toLowerCase());
     }
 
     const state = {
@@ -581,6 +698,7 @@
           title: (row.title || "").trim(),
           total_runs: Number(row.total_runs || 0),
           pass_count: Number(row.pass_count || 0),
+          no_zero_pass_items: hasNoZeroPassItems(row.taskid),
         })));
 
       state.taskMap = groupByTask(state.rows);
@@ -589,7 +707,7 @@
       renderStats();
       renderTaskList("");
       resultTitle.textContent = "Search or choose a task";
-      resultSubtitle.textContent = `${state.rows.length} zero-pass rows loaded from ${sourceLabel}.`;
+      resultSubtitle.textContent = `${effectiveRows(state.rows).length} zero-pass rows loaded from ${sourceLabel}.`;
       results.className = "empty";
       results.textContent = "Search for a task ID or attempt ID, or choose one from the task list.";
     }
@@ -651,22 +769,30 @@
       });
     }
 
+    function effectiveRows(rows) {
+      return (rows || []).filter((row) => !row.no_zero_pass_items);
+    }
+
     function groupByTask(rows) {
       const map = new Map();
       rows.forEach((row) => {
         if (!map.has(row.taskid)) map.set(row.taskid, []);
         map.get(row.taskid).push(row);
       });
-      return new Map(Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0])));
+      return new Map(Array.from(map.entries()).sort((a, b) =>
+        effectiveRows(b[1]).length - effectiveRows(a[1]).length || a[0].localeCompare(b[0])
+      ));
     }
 
     function renderStats() {
-      const rubrics = state.rows.filter((row) => row.check_type === "rubric").length;
-      const tests = state.rows.filter((row) => row.check_type === "test").length;
-      document.getElementById("tasksStat").textContent = state.taskMap.size;
+      const zeroRows = effectiveRows(state.rows);
+      const rubrics = zeroRows.filter((row) => row.check_type === "rubric").length;
+      const tests = zeroRows.filter((row) => row.check_type === "test").length;
+      const tasksWithZero = new Set(zeroRows.map((row) => row.taskid)).size;
+      document.getElementById("tasksStat").textContent = tasksWithZero;
       document.getElementById("rubricsStat").textContent = rubrics;
       document.getElementById("testsStat").textContent = tests;
-      document.getElementById("rowsStat").textContent = state.rows.length;
+      document.getElementById("rowsStat").textContent = zeroRows.length;
     }
 
     function renderTaskList(query) {
@@ -685,7 +811,8 @@
       tasks.forEach(([taskid, rows]) => {
         const button = document.createElement("button");
         button.className = `task-button${taskid === state.selectedTask ? " active" : ""}`;
-        button.innerHTML = `${escapeHtml(taskid)} <span class="task-count">${rows.length}</span>`;
+        const count = effectiveRows(rows).length;
+        button.innerHTML = `${escapeHtml(taskid)} <span class="task-count">${count}</span>`;
         button.addEventListener("click", () => selectTask(taskid));
         taskList.appendChild(button);
       });
@@ -718,22 +845,23 @@
     }
 
     function currentRows() {
-      const rows = state.taskMap.get(state.selectedTask) || [];
+      const rows = effectiveRows(state.taskMap.get(state.selectedTask) || []);
       if (state.filter === "all") return rows;
       return rows.filter((row) => row.check_type === state.filter);
     }
 
     function renderResults() {
-      const allRows = state.taskMap.get(state.selectedTask) || [];
+      const allRows = effectiveRows(state.taskMap.get(state.selectedTask) || []);
       const rows = currentRows();
       const rubrics = allRows.filter((row) => row.check_type === "rubric").length;
       const tests = allRows.filter((row) => row.check_type === "test").length;
+      const totalLoaded = effectiveRows(state.rows).length;
 
       if (!state.selectedTask) {
         resultTitle.textContent = "Search or choose a task";
-        resultSubtitle.textContent = state.rows.length ? `${state.rows.length} zero-pass rows loaded.` : "Expected columns: taskid, attempt, last_attempt_date, check_type, title, total_runs, pass_count.";
+        resultSubtitle.textContent = totalLoaded ? `${totalLoaded} zero-pass rows loaded.` : "Expected columns: taskid, attempt, last_attempt_date, check_type, title, total_runs, pass_count.";
         results.className = "empty";
-        results.textContent = state.rows.length ? "Search for a task ID or attempt ID, or choose one from the task list." : "Upload the edited sheet CSV, then search for a task ID or attempt ID.";
+        results.textContent = totalLoaded ? "Search for a task ID or attempt ID, or choose one from the task list." : "Upload the edited sheet CSV, then search for a task ID or attempt ID.";
         return;
       }
 
@@ -742,7 +870,9 @@
 
       if (!rows.length) {
         results.className = "empty";
-        results.textContent = `No ${state.filter} rows for this task.`;
+        results.textContent = hasNoZeroPassItems(state.selectedTask)
+          ? "No pass@k 0 items for this task."
+          : `No ${state.filter} rows for this task.`;
         return;
       }
 
